@@ -46,7 +46,7 @@ conda activate bop
 conda install pytorch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 pytorch-cuda=12.1 -c pytorch -c nvidia -y
 ```
 
-### Install CUDA Toolkit (Optional)
+### Install CUDA Toolkit
 ```bash
 conda install nvidia/label/cuda-12.1.0::cuda-toolkit
 ```
