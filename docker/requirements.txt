@@ -5,6 +5,7 @@ opencv-python==4.8.0.74
 torch==2.3.0
 torchvision==0.18.0
 torchaudio==2.3.0
+tensorboard==2.18.0
 ultralytics==8.3.61
 
 # Visualization / augmentation
