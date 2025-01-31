@@ -1,10 +1,10 @@
 # Core numeric / ML
-numpy==1.25.0
+numpy==1.26.4
 scipy==1.14.0
-opencv-python==4.9.0.80
-torch==2.1.0
-torchvision==0.16.0
-torchaudio==2.1.0
+opencv-python==4.8.0.74
+torch==2.3.0
+torchvision==0.18.0
+torchaudio==2.3.0
 ultralytics==8.3.61
 
 # Visualization / augmentation
@@ -13,7 +13,6 @@ Pillow==10.2.0
 
 # Tools
 tqdm==4.67.1
-pyyaml==6.0.2
 
 # 3D / geometry
 pyrender==0.1.45
