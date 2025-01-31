@@ -35,31 +35,21 @@ output/            # Various output images and results
 ## Environment Setup
 To set up the environment, follow these steps (tested on Ubuntu with an NVIDIA GPU). The environment name is `bop`.
 
-### Create a Conda Environment
+### Build Docker Container
 ```bash
-conda create -n bop python=3.10 -y
-conda activate bop
+cd docker/
+docker build . -t bpc:2025.1.31
 ```
 
-### Install PyTorch and Dependencies
+### Run Docker
 ```bash
-conda install pytorch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 pytorch-cuda=12.1 -c pytorch -c nvidia -y
+docker run -p 8888:8888 --shm-size=1g --runtime nvidia --gpus all -v /home/akasha_uswest2/bin_picking_challenge/ipd_codebase:/ipd_codebase -ti bpc_challenge:latest bash
 ```
 
-### Install CUDA Toolkit
-```bash
-conda install nvidia/label/cuda-12.1.0::cuda-toolkit
-```
 
-### Install Required Python Packages
+### Download Data
 ```bash
-pip install -r requirements.txt
-```
-
-### Check GPU Availability
-```bash
-nvidia-smi
-nvcc --version
+bash download_data.sh
 ```
 
 ## Training Pipeline
@@ -67,7 +57,7 @@ nvcc --version
 ### Prepare YOLO Data
 Convert BOP data to YOLO format:
 ```bash
-python yolo/prepare_data.py \
+python bpc/yolo/prepare_data.py \
     --dataset_path "datasets/ipd_bop_data_jan25_1/train_pbr" \
     --output_path "datasets/yolo11/ipd_bop_data_jan25_1_obj_11" \
     --obj_id 11
@@ -75,7 +65,7 @@ python yolo/prepare_data.py \
 
 ### Train YOLO Model
 ```bash
-python yolo/train.py \
+python bpc/yolo/train.py \
     --obj_id 11 \
     --data_path "yolo/configs/data_obj_11.yaml" \
     --epochs 20 \
@@ -86,7 +76,7 @@ python yolo/train.py \
 
 ### Train Pose Model
 ```bash
-python pose/train.py \
+python train_pose.py \
   --root_dir datasets/ipd_bop_data_jan25_1 \
   --target_obj_id 11 \
   --epochs 5 \
@@ -95,6 +85,14 @@ python pose/train.py \
   --num_workers 16 \
   --checkpoints_dir /home/exouser/Desktop/idp_codebase/pose/checkpoints
 ```
+
+### Run Inference
+```bash
+jupyter notebook --ip=0.0.0.0 --allow-root --port=8888
+# Go to localhost:8888 on your browswer
+# Run "Inference Notebook.ipynb"
+```
+
 
 ### Notes
 - Ensure CUDA 12.1 drivers are installed and PyTorch recognizes the GPU (`nvidia-smi`).
