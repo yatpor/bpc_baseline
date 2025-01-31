@@ -43,7 +43,7 @@ docker build . -t bpc:2025.1.31
 
 ### Run Docker
 ```bash
-docker run -p 8888:8888 --shm-size=1g --runtime nvidia --gpus all -v /home/akasha_uswest2/bin_picking_challenge/ipd_codebase:/ipd_codebase -ti bpc_challenge:latest bash
+docker run -p 8888:8888 --shm-size=1g --runtime nvidia --gpus all -v /home/akasha_uswest2/bin_picking_challenge/ipd_codebase:/ipd_codebase -ti bpc:2025.1.31 bash
 ```
 
 
