@@ -122,11 +122,14 @@ def main():
     model = SimplePoseNet(pretrained=not args.resume).to(device)
 
     # Load checkpoint if resuming
-    checkpoint_path = os.path.join(checkpoint_dir, "last_checkpoint.pth")
-    if args.resume and os.path.exists(checkpoint_path):
-        print(f"[INFO] Loading checkpoint from {checkpoint_path}")
-        checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint["model_state_dict"])
+    # checkpoint_path = os.path.join(checkpoint_dir, "last_checkpoint.pth")
+    checkpoint_path = 'best_model.pth' # TODO UNDO THIS
+    # if args.resume and os.path.exists(checkpoint_path):
+    print(f"[INFO] Loading checkpoint from {checkpoint_path}")
+    checkpoint = torch.load(checkpoint_path)
+    print(checkpoint.keys())
+
+    model.load_state_dict(checkpoint)
 
     # Initialize criterion and optimizer
     criterion = EulerAnglePoseLoss(w_rot=1.0, w_center=1.0)
@@ -152,3 +155,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+python pose/train.py \
+  --root_dir datasets/ipd_bop_data_jan25_1 \
+  --target_obj_id 11 \
+  --epochs 5 \
+  --batch_size 32 \
+  --lr 1e-3 \
+  --num_workers 16 \
+  --checkpoints_dir /home/exouser/Desktop/idp_codebase/pose/checkpoints
