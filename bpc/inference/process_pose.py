@@ -70,7 +70,7 @@ class PoseEstimator:
             confs = detections.boxes.conf.cpu().numpy()
             clss  = detections.boxes.cls.cpu().numpy()
             if len(detections.boxes)==0:
-                camera_predictions[cam_id] = []
+                camera_predictions[idx] = []
                 continue
             # Keep only class=0 with conf>=0.5
             valid = (clss==0) & (confs>=self.params.yolo_conf_thresh)
