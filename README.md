@@ -85,6 +85,12 @@ python train_pose.py \
   --num_workers 16 \
   --checkpoints_dir /home/exouser/Desktop/idp_codebase/pose/checkpoints
 ```
+### Download Pretrained Models
+```bash
+wget https://storage.googleapis.com/akasha-public/IPBC/baseline_solution/v1/models.zip
+unzip models.zip
+rm models.zip
+```
 
 ### Run Inference
 ```bash
