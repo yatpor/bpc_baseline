@@ -58,8 +58,8 @@ bash download_data.sh
 Convert BOP data to YOLO format:
 ```bash
 python bpc/yolo/prepare_data.py \
-    --dataset_path "datasets/ipd_bop_data_jan25_1/train_pbr" \
-    --output_path "datasets/yolo11/ipd_bop_data_jan25_1_obj_11" \
+    --dataset_path "datasets/train_pbr" \
+    --output_path "datasets/yolo11/train_obj_11" \
     --obj_id 11
 ```
 
@@ -77,13 +77,13 @@ python bpc/yolo/train.py \
 ### Train Pose Model
 ```bash
 python train_pose.py \
-  --root_dir datasets/ipd_bop_data_jan25_1 \
+  --root_dir datasets/ \
   --target_obj_id 11 \
   --epochs 5 \
   --batch_size 32 \
   --lr 1e-3 \
   --num_workers 16 \
-  --checkpoints_dir /home/exouser/Desktop/idp_codebase/pose/checkpoints
+  --checkpoints_dir yolo_ckpts/
 ```
 ### Download Pretrained Models
 ```bash
