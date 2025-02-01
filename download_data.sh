@@ -2,11 +2,10 @@
 
 # Define the URLs for the datasets
 DATASET_URLS=(
-    "https://storage.googleapis.com/akasha-public/IBPC/ipd_27.01.zip"
-    "https://storage.googleapis.com/akasha-public/IBPC/bpc_train_0.zip"
-    "https://storage.googleapis.com/akasha-public/IBPC/bpc_train_1.zip"
+    "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_val.zip"
+    "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_train_pbr.zip"
 )
-
+# docker run --network=host -e BOP_PATH=/datasets/ -e DATASET_NAME=ipd -v /home/akasha_uswest2/bin_picking_challenge/ipd_codebase/datasets/:/datasets/ -it ibpc:tester
 # Define the target directory
 TARGET_DIR="./datasets"
 
