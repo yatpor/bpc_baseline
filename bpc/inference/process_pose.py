@@ -64,6 +64,7 @@ class PoseEstimator:
     def _detect(self, capture):
         camera_predictions = {}
         for idx, image in enumerate(capture.images):
+            print(image.shape)
             detections = self.yolo(image, imgsz=1280)[0]
             boxes = detections.boxes.xyxy.cpu().numpy()
             confs = detections.boxes.conf.cpu().numpy()

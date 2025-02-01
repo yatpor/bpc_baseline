@@ -373,7 +373,8 @@ class Capture:
         self.Ks = Ks
         self.RTs = RTs
         print(gt_poses)
-        self.gt_poses = np.linalg.inv(RTs[0]) @ gt_poses
+        if gt_poses:
+            self.gt_poses = np.linalg.inv(RTs[0]) @ gt_poses
         
     @classmethod
     def from_dir(cls, scene_dir, cam_ids, image_id, obj_id):
