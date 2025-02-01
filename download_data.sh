@@ -2,6 +2,7 @@
 
 # Define the URLs for the datasets
 DATASET_URLS=(
+    "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_models.zip"
     "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_val.zip"
     "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_train_pbr.zip"
 )
