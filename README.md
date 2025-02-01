@@ -43,7 +43,8 @@ docker build . -t bpc:2025.1.31
 
 ### Run Docker
 ```bash
-docker run -p 8888:8888 --shm-size=1g --runtime nvidia --gpus all -v /home/akasha_uswest2/bin_picking_challenge/ipd_codebase:/ipd_codebase -ti bpc:2025.1.31 bash
+docker run -p 8888:8888 --shm-size=1g --runtime nvidia --gpus all -v $(pwd):/code -ti bpc:2025.1.31 bash
+cd /code
 ```
 
 
@@ -57,7 +58,7 @@ bash download_data.sh
 ### Prepare YOLO Data
 Convert BOP data to YOLO format:
 ```bash
-python bpc/yolo/prepare_data.py \
+python3 bpc/yolo/prepare_data.py \
     --dataset_path "datasets/train_pbr" \
     --output_path "datasets/yolo11/train_obj_11" \
     --obj_id 11
@@ -65,7 +66,7 @@ python bpc/yolo/prepare_data.py \
 
 ### Train YOLO Model
 ```bash
-python bpc/yolo/train.py \
+python3 bpc/yolo/train.py \
     --obj_id 11 \
     --data_path "yolo/configs/data_obj_11.yaml" \
     --epochs 20 \
@@ -76,7 +77,7 @@ python bpc/yolo/train.py \
 
 ### Train Pose Model
 ```bash
-python train_pose.py \
+python3 train_pose.py \
   --root_dir datasets/ \
   --target_obj_id 11 \
   --epochs 5 \
