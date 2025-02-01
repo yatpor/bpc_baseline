@@ -5,7 +5,7 @@ package_name = 'bpc_baseline'
 setup(
     name=package_name,
     version="1.0",
-    packages=find_packages(exclude=("docs")),
+    packages=['bpc'],
     install_requires=["scipy"],
     author="Agastya Karla",
     author_email="todo",
