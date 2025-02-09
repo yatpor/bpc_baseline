@@ -549,9 +549,9 @@ $$
 
   $$
   \begin{aligned}
-  R_x &= \operatorname{atan2}(R_{2,1},\; R_{2,2}) \\
-  R_y &= \operatorname{atan2}(-R_{2,0},\; s_y) \\
-  R_z &= \operatorname{atan2}(R_{1,0},\; R_{0,0})
+  R_x &= \mathrm{atan2}(R_{2,1},\; R_{2,2}) \\
+  R_y &= \mathrm{atan2}(-R_{2,0},\; s_y) \\
+  R_z &= \mathrm{atan2}(R_{1,0},\; R_{0,0})
   \end{aligned}
   $$
 
@@ -559,8 +559,8 @@ $$
 
   $$
   \begin{aligned}
-  R_x &= \operatorname{atan2}(-R_{1,2},\; R_{1,1}) \\
-  R_y &= \operatorname{atan2}(-R_{2,0},\; s_y) \\
+  R_x &= \mathrm{atan2}(-R_{1,2},\; R_{1,1}) \\
+  R_y &= \mathrm{atan2}(-R_{2,0},\; s_y) \\
   R_z &= 0
   \end{aligned}
   $$
@@ -580,9 +580,9 @@ $$
 
 we compute:
 
-- $R_x = \operatorname{atan2}(0,\; 1) = 0$
-- $R_y = \operatorname{atan2}(0,\; \sqrt{0.866^2 + 0.5^2}) = 0$
-- $R_z = \operatorname{atan2}(0.5,\; 0.866) \approx 0.523 \, \text{rad} \quad (\approx 30^\circ)$
+- $R_x = \mathrm{atan2}(0,\; 1) = 0$
+- $R_y = \mathrm{atan2}(0,\; \sqrt{0.866^2 + 0.5^2}) = 0$
+- $R_z = \mathrm{atan2}(0.5,\; 0.866) \approx 0.523 \,\text{rad} \quad (\approx 30^\circ)$
 
 Thus, the **Euler angle representation** is:
 
