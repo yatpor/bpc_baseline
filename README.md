@@ -585,7 +585,7 @@ we compute:
 Thus, the **Euler angle representation** is:
 
 $$
-[0,\; 0,\; 0.523]
+[0,\ 0,\ 0.523]
 $$
 
 ---
@@ -692,7 +692,7 @@ label_dict = {
 | **Label Type**         | **Description**                                               | **Advantages**                         |
 |------------------------|---------------------------------------------------------------|----------------------------------------|
 | **Euler Angles**       | 3 values $(R_x, R_y, R_z)$ representing rotations (in radians).  | Simple, but can suffer from gimbal lock. |
-| **Quaternions**        | 4D representation $((x, y, z, w))$ that avoids gimbal lock.         | More stable, though less intuitive.    |
+| **Quaternions**        | 4D representation $(x, y, z, w)$ that avoids gimbal lock.         | More stable, though less intuitive.    |
 | **6D Representation**  | Uses the first two columns of $R(r_1, r_2)$.                      | More robust for deep learning tasks.   |
 
 ---
