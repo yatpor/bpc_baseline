@@ -522,15 +522,15 @@ For a given ground-truth pose:
 
 - **Rotation Matrix**:
   
-  $$
-   {R} \in {R}^{3 \times 3}
-  $$
+$$
+\mathbf{R} \in \mathbb{R}^{3 \times 3}
+$$
   
 - **Translation Vector**:
  
-  $$
-  \mathbf{t} \in \mathbb{R}^{3 \times 1}
-  $$
+$$
+\mathbf{t} \in \mathbb{R}^{3 \times 1}
+$$
 
 From **R**, we derive **Euler angles**, **quaternions**, and **6D rotation representations**.
 
