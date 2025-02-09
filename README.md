@@ -167,7 +167,7 @@ To better understand the dataset and its annotations, here are some essential co
 
 ### **Mathematical Expressions**
 
-#### **Intrinsic Camera Matrix**
+#### **Intrinsic Camera Matrix:**
 $$
 K = \begin{bmatrix} 
 f_x & 0 & c_x \\ 
@@ -176,17 +176,17 @@ f_x & 0 & c_x \\
 \end{bmatrix}
 $$
 
-#### **World-to-Image Projection**
+#### **World-to-Image Projection:**
 $$
 P_i = K \begin{bmatrix} R & t \end{bmatrix} P_w
 $$
 
-#### **Rotation Matrix Condition**
+#### **Rotation Matrix Condition:**
 $$
 R^\top R = I
 $$
 
-#### **Visibility Fraction Formula**
+#### **Visibility Fraction Formula:**
 $$
 \text{visib\ fract} = \frac{\text{px\ count\ visib}}{\text{px\ count\ all}}
 $$
@@ -508,9 +508,9 @@ During validation (`split="val"`), **no augmentation** is performed, ensuring we
 
 ---
 
-### **4. Generating Rotation Labels**
+### Generating Rotation Labels for 6DoF Pose Estimation
 
-Since the goal is **6DoF** (3D rotation + translation) pose estimation, we generate rotation labels from the ground-truth rotation matrix:
+Since the goal is **6DoF** (3D rotation + translation) pose estimation, we generate rotation labels from the ground-truth rotation matrix
 
 $$
 \mathbf{R} \in \mathbb{R}^{3 \times 3}
@@ -520,12 +520,11 @@ $$
 
 For a given ground-truth pose:
 
-- **Rotation Matrix**:  
+- **Rotation Matrix**: 
   $$
   \mathbf{R} \in \mathbb{R}^{3 \times 3}
   $$
-  
-- **Translation Vector**:  
+- **Translation Vector**:
   $$
   \mathbf{t} \in \mathbb{R}^{3 \times 1}
   $$
@@ -534,38 +533,42 @@ From **R**, we derive **Euler angles**, **quaternions**, and **6D rotation repre
 
 ---
 
-### **1. Euler Angles** $(R_x, R_y, R_z)$
+#### 1. Euler Angles $(R_x, R_y, R_z)$
 
 Euler angles represent rotations about the X, Y, and Z axes (in radians).
 
-#### **Conversion from Rotation Matrix to Euler Angles**
+#### Conversion from Rotation Matrix to Euler Angles
 
 Define:
+
 $$
 s_y = \sqrt{R_{0,0}^2 + R_{1,0}^2}
 $$
 
-- **If** $s_y \geq 10^{-6}$:
+- **If** $(s_y \geq 10^{-6})$:
+
   $$
   \begin{aligned}
-  R_x &= \operatorname{atan2}(R_{2,1}, R_{2,2}) \\
-  R_y &= \operatorname{atan2}(-R_{2,0}, s_y) \\
-  R_z &= \operatorname{atan2}(R_{1,0}, R_{0,0})
+  R_x &= \operatorname{atan2}(R_{2,1},\; R_{2,2}) \\
+  R_y &= \operatorname{atan2}(-R_{2,0},\; s_y) \\
+  R_z &= \operatorname{atan2}(R_{1,0},\; R_{0,0})
   \end{aligned}
   $$
-  
+
 - **Else** (singular case):
+
   $$
   \begin{aligned}
-  R_x &= \operatorname{atan2}(-R_{1,2}, R_{1,1}) \\
-  R_y &= \operatorname{atan2}(-R_{2,0}, s_y) \\
+  R_x &= \operatorname{atan2}(-R_{1,2},\; R_{1,1}) \\
+  R_y &= \operatorname{atan2}(-R_{2,0},\; s_y) \\
   R_z &= 0
   \end{aligned}
   $$
 
-#### **Example Calculation**
+#### Example Calculation
 
 Given:
+
 $$
 \mathbf{R} =
 \begin{bmatrix}
@@ -574,35 +577,29 @@ $$
 0     & 0     & 1
 \end{bmatrix},
 $$
+
 we compute:
 
-$$
-R_x = \operatorname{atan2}(0, 1) = 0
-$$
-
-$$
-R_y = \operatorname{atan2}(0, \sqrt{0.866^2 + 0.5^2}) = 0
-$$
-
-$$
-R_z = \operatorname{atan2}(0.5, 0.866) \approx 0.523 \, \text{rad} \quad (\approx 30^\circ)
-$$
+- $R_x = \operatorname{atan2}(0,\; 1) = 0$
+- $R_y = \operatorname{atan2}(0,\; \sqrt{0.866^2 + 0.5^2}) = 0$
+- $R_z = \operatorname{atan2}(0.5,\; 0.866) \approx 0.523 \, \text{rad} \quad (\approx 30^\circ)$
 
 Thus, the **Euler angle representation** is:
 
 $$
-[0, 0, 0.523]
+[0,\; 0,\; 0.523]
 $$
 
 ---
 
-### **2. Quaternion** $(x, y, z, w)$
+#### 2. Quaternion $(x, y, z, w)$
 
 Quaternions provide a 4D representation that avoids gimbal lock.
 
-#### **Conversion from Rotation Matrix to Quaternion**
+#### Conversion from Rotation Matrix to Quaternion
 
 The conversion formulas are:
+
 $$
 \begin{aligned}
 w &= \frac{1}{2}\sqrt{1 + R_{0,0} + R_{1,1} + R_{2,2}}, \\
@@ -612,9 +609,10 @@ z &= \frac{R_{1,0} - R_{0,1}}{4w}.
 \end{aligned}
 $$
 
-#### **Example Calculation**
+#### Example Calculation
 
 For the same rotation matrix:
+
 $$
 \mathbf{R} =
 \begin{bmatrix}
@@ -623,47 +621,39 @@ $$
 0     & 0     & 1
 \end{bmatrix},
 $$
+
 we compute:
 
-$$
-w \approx 0.9659
-$$
-
-$$
-x = 0
-$$
-
-$$
-y = 0
-$$
-
-$$
-z \approx \frac{0.5 - (-0.5)}{4 \times 0.9659} \approx 0.2588
-$$
+- $w \approx 0.9659$
+- $x = 0$
+- $y = 0$
+- $z \approx \dfrac{0.5 - (-0.5)}{4 \times 0.9659} \approx 0.2588$
 
 Thus, the quaternion is:
 
 $$
-[0,\ 0,\ 0.2588,\ 0.9659]
+[0,\; 0,\; 0.2588,\; 0.9659]
 $$
 
 ---
 
-### **3. 6D Rotation Representation** $R(r_1, r_2)$
+## 3. 6D Rotation Representation $R(r_1, r_2)$
 
 This representation encodes the rotation using the first two columns of the rotation matrix.
 
-#### **Conversion from Rotation Matrix to 6D Representation**
+### Conversion from Rotation Matrix to 6D Representation
 
 Extract:
+
 $$
 r_1 = \begin{bmatrix} R_{0,0} \\ R_{1,0} \\ R_{2,0} \end{bmatrix}, \quad
 r_2 = \begin{bmatrix} R_{0,1} \\ R_{1,1} \\ R_{2,1} \end{bmatrix}.
 $$
 
-#### **Example Calculation**
+### Example Calculation
 
 For the same rotation matrix:
+
 $$
 \mathbf{R} =
 \begin{bmatrix}
@@ -672,15 +662,17 @@ $$
 0     & 0     & 1
 \end{bmatrix},
 $$
+
 we have:
+
 $$
-r_1 = [0.866,\ 0.5,\ 0], \quad r_2 = [-0.5,\ 0.866,\ 0].
+r_1 = [0.866,\; 0.5,\; 0], \quad r_2 = [-0.5,\; 0.866,\; 0].
 $$
 
 Thus, the 6D representation is:
 
 $$
-[0.866,\ 0.5,\ 0,\ -0.5,\ 0.866,\ 0]
+[0.866,\; 0.5,\; 0,\; -0.5,\; 0.866,\; 0]
 $$
 
 
