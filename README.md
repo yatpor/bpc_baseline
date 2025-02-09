@@ -520,11 +520,14 @@ $$
 
 For a given ground-truth pose:
 
-- **Rotation Matrix**: 
+- **Rotation Matrix**:
+  
   $$
   \mathbf{R} \in \mathbb{R}^{3 \times 3}
   $$
+  
 - **Translation Vector**:
+ 
   $$
   \mathbf{t} \in \mathbb{R}^{3 \times 1}
   $$
@@ -535,7 +538,7 @@ From **R**, we derive **Euler angles**, **quaternions**, and **6D rotation repre
 
 #### 1. Euler Angles $(R_x, R_y, R_z)$
 
-Euler angles represent rotations about the X, Y, and Z axes (in radians).
+Euler angles represent rotations about the $X$, $Y$, and $Z$ axes (in radians).
 
 #### Conversion from Rotation Matrix to Euler Angles
 
@@ -547,13 +550,10 @@ $$
 
 - **If** $(s_y \geq 10^{-6})$:
 
-  $$
-  \begin{aligned}
-  R_x &= \mathrm{atan2}(R_{2,1},\; R_{2,2}) \\
-  R_y &= \mathrm{atan2}(-R_{2,0},\; s_y) \\
-  R_z &= \mathrm{atan2}(R_{1,0},\; R_{0,0})
-  \end{aligned}
-  $$
+$$ R_x = \text{atan2}(R_{2,1}, R_{2,2}) $$
+$$ R_y = \text{atan2}(-R_{2,0}, s_y) $$
+$$ R_z = \text{atan2}(R_{1,0}, R_{0,0}) $$
+
 
 - **Else** (singular case):
 
