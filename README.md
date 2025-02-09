@@ -149,16 +149,52 @@ The dataset consists of both **synthetic** and **real-world** images. Synthetic 
 
 To better understand the dataset and its annotations, here are some essential concepts related to **camera parameters, object poses, and bounding boxes**:
 
+### Key Concepts Explained
+
+To better understand the dataset and its annotations, here are some essential concepts related to **camera parameters, object poses, and bounding boxes**:
+
 | Concept | Explanation |
 |---------|------------|
-| **Intrinsic Camera Matrix (`cam_K`)** | A **3×3 matrix** that defines the camera’s internal parameters, including focal length and optical center. It is used to project **3D points onto a 2D image plane**. The general form is: <br> `K = [[f_x, 0, c_x], [0, f_y, c_y], [0, 0, 1]]` <br> where `(f_x, f_y)` are the focal lengths and `(c_x, c_y)` are the optical center coordinates. |
+| **Intrinsic Camera Matrix (`cam_K`)** | A **3×3 matrix** that defines the camera’s internal parameters, including focal length and optical center. It is used to project **3D points onto a 2D image plane**. The general form is shown below. |
 | **Depth Scale (`depth_scale`)** | A factor to convert raw depth values to **millimeters**. If the dataset provides depth in arbitrary units, this scale ensures correct **metric depth values**. |
-| **Rotation Matrix (`cam_R_w2c`, `cam_R_m2c`)** | A **3×3 matrix** that describes the rotation of a coordinate system. It transforms points from one coordinate system to another (e.g., world → camera or model → camera). The matrix must satisfy `R^T R = I`, meaning it's **orthonormal**. |
-| **Translation Vector (`cam_t_w2c`, `cam_t_m2c`)** | A **3×1 vector** that defines the translation (shift) of a coordinate system. It moves points from one coordinate system to another. The full transformation from world to image coordinates is: <br> `P_i = K * [R | t] * P_w` <br> where `P_w` is a **3D point in world coordinates**, and `P_i` is its **2D projection in image coordinates**. |
+| **Rotation Matrix (`cam_R_w2c`, `cam_R_m2c`)** | A **3×3 matrix** that describes the rotation of a coordinate system. It transforms points from one coordinate system to another (e.g., world → camera or model → camera). The matrix must satisfy $R^\top R = I$, meaning it's **orthonormal**. |
+| **Translation Vector (`cam_t_w2c`, `cam_t_m2c`)** | A **3×1 vector** that defines the translation (shift) of a coordinate system. It moves points from one coordinate system to another. The full transformation from world to image coordinates is:  |
 | **Bounding Box (`bbox_obj`, `bbox_visib`)** | The **rectangular region** surrounding an object in the image. `bbox_obj` refers to the **full bounding box**, while `bbox_visib` includes **only the visible part** of the object. |
-| **Visibility Fraction (`visib_fract`)** | A value between **0 and 1**, representing how much of the object is visible in the image. Computed as: <br> `visib_fract = px_count_visib / px_count_all` <br> where `px_count_visib` is the number of visible pixels and `px_count_all` is the total object pixel count. |
+| **Visibility Fraction (`visib_fract`)** | A value between **0 and 1**, representing how much of the object is visible in the image. The formula is provided below. |
 | **Symmetry in Objects (`symmetries_continuous`, `symmetries_discrete`)** | Some objects **look identical under certain transformations**. Symmetries can be **continuous** (e.g., cylinders, which can rotate infinitely around an axis) or **discrete** (e.g., a square can rotate by **90° steps** and remain unchanged). Handling symmetries is important for **pose estimation**. |
 
+---
+
+### **Mathematical Expressions**
+
+#### **Intrinsic Camera Matrix**
+$$
+K = \begin{bmatrix} 
+f_x & 0 & c_x \\ 
+0 & f_y & c_y \\ 
+0 & 0 & 1 
+\end{bmatrix}
+$$
+
+#### **World-to-Image Projection**
+$$
+P_i = K \begin{bmatrix} R & t \end{bmatrix} P_w
+$$
+
+#### **Rotation Matrix Condition**
+$$
+R^\top R = I
+$$
+
+#### **Visibility Fraction Formula**
+$$
+\text{visib\_fract} = \frac{\text{px\_count\_visib}}{\text{px\_count\_all}}
+$$
+
+#### **Symmetry-Aware Loss**
+$$
+L_{\text{sym}} = \min_{S_i} L_{\text{rotation}}(R_{\text{gt}} S_i, R_{\text{pred}})
+$$
 
 
 <!-----
