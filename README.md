@@ -151,7 +151,13 @@ To better understand the dataset and its annotations, here are some essential co
 
 | Concept | Explanation |
 |---------|------------|
-| **Intrinsic Camera Matrix (`cam_K`)** | A **3×3 matrix** that defines the camera’s internal parameters, including focal length and optical center. It is used to project **3D points onto a 2D image plane**. The general form is: <br> $$ K = \begin{bmatrix} f_x & 0 & c_x \\ 0 & f_y & c_y \\ 0 & 0 & 1 \end{bmatrix} $$ where $$( f_x, f_y )$$ are the focal lengths and $$( c_x, c_y )$$ are the optical center coordinates. |
+| **Intrinsic Camera Matrix (`cam_K`)** | A **3×3 matrix** that defines the camera’s internal parameters, including focal length and optical center. It is used to project **3D points onto a 2D image plane**. The general form is: $$
+K = \begin{bmatrix}
+f_x & 0   & c_x \\
+0   & f_y & c_y \\
+0   & 0   & 1
+\end{bmatrix}
+$$ where $$( f_x, f_y )$$ are the focal lengths and $$( c_x, c_y )$$ are the optical center coordinates. |
 | **Depth Scale (`depth_scale`)** | A factor to convert raw depth values to **millimeters**. If the dataset provides depth in arbitrary units, this scale ensures correct **metric depth values**. |
 | **Rotation Matrix (`cam_R_w2c`, `cam_R_m2c`)** | A **3×3 matrix** that describes the rotation of a coordinate system. It transforms points from one coordinate system to another (e.g., world → camera or model → camera). The matrix must satisfy $$ R^T R = I $$ meaning it's **orthonormal**. |
 | **Translation Vector (`cam_t_w2c`, `cam_t_m2c`)** | A **3×1 vector** that defines the translation (shift) of a coordinate system. It moves points from one coordinate system to another. The full transformation from world to image coordinates is:  $P_i = K \begin{bmatrix} R & t \end{bmatrix} P_w$ where $P_w$ is a **3D point in world coordinates**, and $P_i$ is its **2D projection in image coordinates**. |
