@@ -159,6 +159,7 @@ To better understand the dataset and its annotations, here are some essential co
 | **Visibility Fraction (`visib_fract`)** | A value between **0 and 1**, representing how much of the object is visible in the image. Computed as: $ \text{visib\_fract} = \frac{\text{px\_count\_visib}}{\text{px\_count\_all}} $, where `px_count_visib` is the number of visible pixels and `px_count_all` is the total object pixel count. |
 | **Symmetry in Objects (`symmetries_continuous`, `symmetries_discrete`)** | Some objects **look identical under certain transformations**. Symmetries can be **continuous** (e.g., cylinders, which can rotate infinitely around an axis) or **discrete** (e.g., a square can rotate by **90° steps** and remain unchanged). Handling symmetries is important for **pose estimation**. |
 
+
 <!-----
 
 ### Summary
