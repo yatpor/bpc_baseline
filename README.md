@@ -635,11 +635,11 @@ $$
 
 ---
 
-## 3. 6D Rotation Representation $R(r_1, r_2)$
+#### 3. 6D Rotation Representation $R(r_1, r_2)$
 
 This representation encodes the rotation using the first two columns of the rotation matrix.
 
-### Conversion from Rotation Matrix to 6D Representation
+#### Conversion from Rotation Matrix to 6D Representation
 
 Extract:
 
@@ -648,7 +648,7 @@ r_1 = \begin{bmatrix} R_{0,0} \\ R_{1,0} \\ R_{2,0} \end{bmatrix}, \quad
 r_2 = \begin{bmatrix} R_{0,1} \\ R_{1,1} \\ R_{2,1} \end{bmatrix}.
 $$
 
-### Example Calculation
+#### Example Calculation
 
 For the same rotation matrix:
 
