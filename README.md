@@ -523,7 +523,7 @@ For a given ground-truth pose:
 - **Rotation Matrix**:
   
   $$
-  \mathbf{R} \in \mathbb{R}^{3 \times 3}
+   {R} \in {R}^{3 \times 3}
   $$
   
 - **Translation Vector**:
