@@ -212,7 +212,7 @@ Next, we will discuss **YOLO v11-based object detection** and how detections are
 
 ### **1. Object Detection with YOLO v11**  
 
-Object detection is the first step in our **6DoF pose estimation pipeline**. We use **Ultralytics YOLO v11**, a state-of-the-art object detection model, to locate objects in the input images and extract their **(cx, cy)** coordinates, which are later used for 3D pose estimation. More details on YOLO v11 can be found in the official documentation: [Ultralytics YOLO11](https://docs.ultralytics.com/models/yolo11/).  
+Object detection is the first step in our **6DoF pose estimation pipeline**. We use **Ultralytics YOLO v11**, a state-of-the-art object detection model, to locate objects in the input images and extract their **$(c_x, c_y)$** coordinates, which are later used for 3D pose estimation. More details on YOLO v11 can be found in the official documentation: [Ultralytics YOLO11](https://docs.ultralytics.com/models/yolo11/).  
 
 #### **Why YOLO?**  
 
@@ -508,20 +508,24 @@ During validation (`split="val"`), **no augmentation** is performed, ensuring we
 
 ---
 
-#### **4. Generating Rotation Labels**
+### **4. Generating Rotation Labels**
 
-Since the goal is **6DoF** (3D rotation + translation) pose estimation, we generate rotation labels from the ground-truth rotation matrix
+Since the goal is **6DoF** (3D rotation + translation) pose estimation, we generate rotation labels from the ground-truth rotation matrix:
+
 $$
 \mathbf{R} \in \mathbb{R}^{3 \times 3}
 $$
+
 (provided in `scene_gt_camX.json`). Each sample includes three rotation representations.
 
 For a given ground-truth pose:
-- **Rotation Matrix**: 
+
+- **Rotation Matrix**:  
   $$
   \mathbf{R} \in \mathbb{R}^{3 \times 3}
   $$
-- **Translation Vector**:
+  
+- **Translation Vector**:  
   $$
   \mathbf{t} \in \mathbb{R}^{3 \times 1}
   $$
@@ -530,18 +534,18 @@ From **R**, we derive **Euler angles**, **quaternions**, and **6D rotation repre
 
 ---
 
-#### 1. Euler Angles $(R_x, R_y, R_z)$
+### **1. Euler Angles** $(R_x, R_y, R_z)$
 
 Euler angles represent rotations about the X, Y, and Z axes (in radians).
 
-#### Conversion from Rotation Matrix to Euler Angles
+#### **Conversion from Rotation Matrix to Euler Angles**
 
 Define:
 $$
 s_y = \sqrt{R_{0,0}^2 + R_{1,0}^2}
 $$
 
-- **If** $(s_y \geq 10^{-6})$:
+- **If** $s_y \geq 10^{-6}$:
   $$
   \begin{aligned}
   R_x &= \operatorname{atan2}(R_{2,1}, R_{2,2}) \\
@@ -549,6 +553,7 @@ $$
   R_z &= \operatorname{atan2}(R_{1,0}, R_{0,0})
   \end{aligned}
   $$
+  
 - **Else** (singular case):
   $$
   \begin{aligned}
@@ -558,7 +563,7 @@ $$
   \end{aligned}
   $$
 
-#### Example Calculation
+#### **Example Calculation**
 
 Given:
 $$
@@ -571,14 +576,17 @@ $$
 $$
 we compute:
 
+$$
+R_x = \operatorname{atan2}(0, 1) = 0
+$$
 
-$R_x = \operatorname{atan2}(0, 1) = 0$
+$$
+R_y = \operatorname{atan2}(0, \sqrt{0.866^2 + 0.5^2}) = 0
+$$
 
-
-$R_y = \operatorname{atan2}(0, \sqrt{0.866^2 + 0.5^2}) = 0$
-
-
-$R_z = \operatorname{atan2}(0.5, 0.866) \approx 0.523 \, \text{rad} \quad (\approx 30^\circ)$
+$$
+R_z = \operatorname{atan2}(0.5, 0.866) \approx 0.523 \, \text{rad} \quad (\approx 30^\circ)
+$$
 
 Thus, the **Euler angle representation** is:
 
@@ -588,11 +596,11 @@ $$
 
 ---
 
-#### 2. Quaternion $(x, y, z, w)$
+### **2. Quaternion** $(x, y, z, w)$
 
 Quaternions provide a 4D representation that avoids gimbal lock.
 
-#### Conversion from Rotation Matrix to Quaternion
+#### **Conversion from Rotation Matrix to Quaternion**
 
 The conversion formulas are:
 $$
@@ -604,7 +612,7 @@ z &= \frac{R_{1,0} - R_{0,1}}{4w}.
 \end{aligned}
 $$
 
-#### Example Calculation
+#### **Example Calculation**
 
 For the same rotation matrix:
 $$
@@ -617,26 +625,35 @@ $$
 $$
 we compute:
 
-$w \approx 0.9659$
+$$
+w \approx 0.9659
+$$
 
-$x = 0$
+$$
+x = 0
+$$
 
-$y = 0$
+$$
+y = 0
+$$
 
-$z \approx \frac{0.5 - (-0.5)}{4 \times 0.9659} \approx 0.2588$
+$$
+z \approx \frac{0.5 - (-0.5)}{4 \times 0.9659} \approx 0.2588
+$$
 
 Thus, the quaternion is:
+
 $$
 [0,\ 0,\ 0.2588,\ 0.9659]
 $$
 
 ---
 
-#### 3. 6D Rotation Representation $R(r_1, r_2)$
+### **3. 6D Rotation Representation** $R(r_1, r_2)$
 
 This representation encodes the rotation using the first two columns of the rotation matrix.
 
-#### Conversion from Rotation Matrix to 6D Representation
+#### **Conversion from Rotation Matrix to 6D Representation**
 
 Extract:
 $$
@@ -644,7 +661,7 @@ r_1 = \begin{bmatrix} R_{0,0} \\ R_{1,0} \\ R_{2,0} \end{bmatrix}, \quad
 r_2 = \begin{bmatrix} R_{0,1} \\ R_{1,1} \\ R_{2,1} \end{bmatrix}.
 $$
 
-#### Example Calculation
+#### **Example Calculation**
 
 For the same rotation matrix:
 $$
@@ -661,11 +678,11 @@ r_1 = [0.866,\ 0.5,\ 0], \quad r_2 = [-0.5,\ 0.866,\ 0].
 $$
 
 Thus, the 6D representation is:
+
 $$
 [0.866,\ 0.5,\ 0,\ -0.5,\ 0.866,\ 0]
 $$
 
----
 
 #### Example Label Dictionary
 
