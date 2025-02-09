@@ -188,12 +188,7 @@ $$
 
 #### **Visibility Fraction Formula**
 $$
-\text{visib\_fract} = \frac{\text{px\_count\_visib}}{\text{px\_count\_all}}
-$$
-
-#### **Symmetry-Aware Loss**
-$$
-L_{\text{sym}} = \min_{S_i} L_{\text{rotation}}(R_{\text{gt}} S_i, R_{\text{pred}})
+\text{visib\ fract} = \frac{\text{px\ count\ visib}}{\text{px\ count\ all}}
 $$
 
 
