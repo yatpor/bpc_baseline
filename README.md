@@ -557,7 +557,6 @@ $$ R_z = \text{atan2}(R_{1,0}, R_{0,0}) $$
 
 - **Else** (singular case):
 
-$$
 
 $$ R_x &= \text{atan2}(-R_{1,2}, R_{1,1}) $$
 $$ R_y &= \text{atan2}(-R_{2,0}, s_y) $$
