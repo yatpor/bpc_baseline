@@ -48,6 +48,7 @@ def train_pose_estimation(
         train_loss_sum = 0.0
         train_deg_sum  = 0.0
         train_steps = 0
+        epoch_total_images = 0  # Initialize counter for images in this epoch
 
         tbar = tqdm(train_loader, desc=f"Train Epoch {epoch}/{epochs}", ncols=120)
         for imgs, lbls, metas in tbar:
@@ -64,6 +65,9 @@ def train_pose_estimation(
             train_steps += 1
             train_loss_sum += metrics["rot_loss"].item()
             train_deg_sum  += metrics["rot_deg_mean"].item()
+
+            batch_size = imgs.size(0)         # Get batch size
+            epoch_total_images += batch_size   # Increment image counter
 
             tbar.set_postfix({
                 "rot_loss": f"{metrics['rot_loss'].item():.3f}",
@@ -102,6 +106,8 @@ def train_pose_estimation(
             f"TRAIN loss={train_loss_avg:.3f}, deg={train_deg_avg:.1f} | "
             f"VAL loss={val_loss_avg:.3f}, deg={val_deg_avg:.1f}"
         )
+        # --- ADDED PRINT STATEMENT HERE ---
+        print(f"[INFO] Epoch: {epoch:03d} completed. Total images processed in this epoch: {epoch_total_images}")
 
         ckpt = {
             "epoch": epoch,
@@ -115,6 +121,10 @@ def train_pose_estimation(
             best_val_rot = val_deg_avg
             torch.save(model.state_dict(), best_model_path)
             print(f"  >> Saved best model with val_deg={best_val_rot:.2f}")
+    # Save final model after last epoch
+    final_model_path = os.path.join(out_dir, "final_model.pth")
+    torch.save(model.state_dict(), final_model_path)
+    print(f"[INFO] Final model saved to {final_model_path}")
 
     writer.close()
     print("DONE. Best model =>", best_model_path)

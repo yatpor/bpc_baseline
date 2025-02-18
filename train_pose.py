@@ -1,7 +1,6 @@
 import argparse
 import torch
-from torch.utils.data import DataLoader, ConcatDataset
-import os
+from torch.utils.data import DataLoader
 from bpc.utils.data_utils import BOPSingleObjDataset, bop_collate_fn
 from bpc.pose.models.simple_pose_net import SimplePoseNet
 from bpc.pose.models.losses import (
@@ -14,6 +13,7 @@ from bpc.pose.models.losses import (
 from bpc.pose.trainers.trainer import train_pose_estimation
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
+import os
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train Pose Estimation Model")
@@ -37,6 +37,7 @@ def parse_args():
                         help="Rotation loss type to use (and set model output dimension accordingly)")
     return parser.parse_args()
 
+
 def find_scenes(root_dir):
     train_pbr_dir = os.path.join(root_dir, "train_pbr")
     if not os.path.exists(train_pbr_dir):
@@ -45,6 +46,7 @@ def find_scenes(root_dir):
     scene_ids = [item for item in all_items if item.isdigit()]
     scene_ids.sort()
     return scene_ids
+
 
 def main():
     args = parse_args()
@@ -56,16 +58,8 @@ def main():
     checkpoint_dir = os.path.join(args.checkpoints_dir, f"obj_{obj_id}")
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    train_ds_fixed = BOPSingleObjDataset(
-        root_dir=args.root_dir,
-        scene_ids=scene_ids,
-        cam_ids=["cam1", "cam2", "cam3"],
-        target_obj_id=obj_id,
-        target_size=256,
-        augment=False,
-        split="train"
-    )
-    train_ds_aug = BOPSingleObjDataset(
+    # Create a single training dataset that applies on-the-fly augmentation.
+    train_ds = BOPSingleObjDataset(
         root_dir=args.root_dir,
         scene_ids=scene_ids,
         cam_ids=["cam1", "cam2", "cam3"],
@@ -84,13 +78,11 @@ def main():
         split="val"
     )
 
-    print(f"[INFO] train_ds_fixed:  {len(train_ds_fixed)} samples")
-    print(f"[INFO] train_ds_aug:    {len(train_ds_aug)} samples")
-    print(f"[INFO] val_ds:          {len(val_ds)} samples")
+    print(f"[INFO] train_ds: {len(train_ds)} samples")
+    print(f"[INFO] val_ds: {len(val_ds)} samples")
 
-    train_dataset = ConcatDataset([train_ds_fixed, train_ds_aug])
     train_loader = DataLoader(
-        train_dataset,
+        train_ds,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.num_workers,
@@ -114,11 +106,11 @@ def main():
         checkpoint = torch.load(checkpoint_path)
         model.load_state_dict(checkpoint["model_state_dict"])
 
-    step_size = max(1, args.epochs // 4)
+    step_size = max(1, args.epochs // 3)
     
     # Load symmetry data from JSON (data.json is assumed to be under the dataset root)
     symmetry_json_path = os.path.join(args.root_dir, "models", "models_info.json")
-    symmetry_data = load_symmetry_from_json(symmetry_json_path, num_samples=12)
+    symmetry_data = load_symmetry_from_json(symmetry_json_path, num_samples=36)# was 12
     
     # Determine if the current object has symmetry.
     if obj_id in symmetry_data and len(symmetry_data[obj_id]) > 0:
@@ -136,14 +128,14 @@ def main():
         else:
             raise ValueError("Invalid loss_type")
     
-    # Wrap criterion if using symmetry-aware loss so that it receives obj_id and sym_flag.
+    # Wrap criterion if using symmetry-aware loss.
     if use_symmetry:
         criterion_wrapper = lambda labels, preds, **kwargs: criterion(labels, preds, obj_id, sym_flag=True)
     else:
         criterion_wrapper = criterion
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = StepLR(optimizer, step_size=step_size, gamma=0.5)
+    scheduler = StepLR(optimizer, step_size=step_size, gamma=0.8)
 
     if args.resume and os.path.exists(checkpoint_path):
         checkpoint = torch.load(checkpoint_path)
@@ -162,21 +154,20 @@ def main():
         resume=args.resume
     )
 
+
 if __name__ == "__main__":
     main()
 
 
-
-
 """
+Example usage:
 python3 train_pose.py \
   --root_dir datasets/ \
-  --target_obj_id 8 \
-  --epochs 50 \
+  --target_obj_id 14 \
+  --epochs 10 \
   --batch_size 32 \
   --lr 5e-4 \
   --num_workers 16 \
   --checkpoints_dir bpc/pose/pose_checkpoints/ \
   --loss_type quat
-
 """

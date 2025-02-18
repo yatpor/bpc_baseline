@@ -1,5 +1,3 @@
-# process_pose.py
-
 import os
 import time
 import cv2
@@ -8,10 +6,19 @@ import torch
 import torchvision.transforms.functional as TF
 from dataclasses import dataclass
 from scipy.spatial.transform import Rotation
-
-from ultralytics import YOLO
 from matplotlib import pyplot as plt
 from scipy.optimize import linear_sum_assignment
+
+# Import your custom loss functions (if needed elsewhere)
+from bpc.pose.models.losses import (
+    EulerAnglePoseLoss,
+    QuaternionPoseLoss,
+    SixDPoseLoss,
+    SymmetryAwarePoseLoss,
+    rotmat_from_euler,
+    quat_to_rotmat,
+    rotmat_from_6d,
+)
 
 from bpc.pose.models.simple_pose_net import SimplePoseNet
 from bpc.utils.data_utils import letterbox_preserving_aspect_ratio, calc_pose_matrix
@@ -21,30 +28,6 @@ from bpc.inference.utils.camera_utils import load_camera_params, compute_fundame
 
 # -----------------------------------------------------------------------------
 # Helper function: convert 6D rotation representation to a 3x3 rotation matrix.
-def compute_rotation_matrix_from_6d(poses_6d):
-    """
-    Convert a 6D rotation representation to a 3x3 rotation matrix.
-    Based on Zhou et al., "On the Continuity of Rotation Representations in Neural Networks".
-    
-    Input:
-        poses_6d: numpy array of shape (6,)
-    Returns:
-        A 3x3 rotation matrix.
-    """
-    # Reshape into two 3D vectors.
-    a1 = poses_6d[:3]
-    a2 = poses_6d[3:]
-    # Normalize the first vector.
-    b1 = a1 / np.linalg.norm(a1)
-    # Make a2 orthogonal to b1.
-    a2_proj = np.dot(b1, a2) * b1
-    b2 = a2 - a2_proj
-    b2 = b2 / np.linalg.norm(b2)
-    # Compute the third orthogonal vector.
-    b3 = np.cross(b1, b2)
-    R_mat = np.stack([b1, b2, b3], axis=-1)
-    return R_mat
-
 # -----------------------------------------------------------------------------
 # Updated parameters class
 @dataclass
@@ -88,17 +71,17 @@ class PosePrediction:
 class PoseEstimator:
     def __init__(self, params: PoseEstimatorParams):
         self.params = params
+        # Initialize YOLO.
+        from ultralytics import YOLO
         self.yolo = YOLO(params.yolo_model_path).cuda()
         
-        # Pass rotation_mode through to ensure we create a model with the same output dimension
+        # Load pose model with the specified rotation mode.
         self.pose_model = load_pose_model(
             pose_model_path=params.pose_model_path,
             device='cuda:0',
             rotation_mode=params.rotation_mode
         )
-        
         self.rotation_mode = params.rotation_mode
-
 
     def _detect(self, capture):
         """
@@ -191,7 +174,7 @@ class PoseEstimator:
                 crop = img[y1:y2, x1:x2]
                 # Use letterbox_preserving_aspect_ratio to get a square image.
                 letter_img, scale, dx, dy = letterbox_preserving_aspect_ratio(
-                    crop, target_size=256, fill_color=(128, 128, 128)
+                    crop, target_size=256, fill_color=(255, 255, 255)
                 )
                 letter_img_rgb = cv2.cvtColor(letter_img, cv2.COLOR_BGR2RGB)
                 tens = TF.to_tensor(letter_img_rgb)
@@ -200,16 +183,22 @@ class PoseEstimator:
                 tens = tens.unsqueeze(0).to('cuda')
                 with torch.no_grad():
                     raw_pred = self.pose_model(tens)[0].cpu().numpy()
-                    # Convert the network output into a rotation matrix.
+                    
                     if self.rotation_mode == "euler" or raw_pred.shape[0] == 3:
                         # Assume raw_pred contains [Rx, Ry, Rz] in radians.
-                        rot_mat = Rotation.from_euler('xyz', raw_pred).as_matrix()
+                        wrapped_pred = ((raw_pred + np.pi) % (2 * np.pi)) - np.pi
+                        euler_tensor = torch.tensor(wrapped_pred, dtype=torch.float32).unsqueeze(0)
+                        rot_mat = rotmat_from_euler(euler_tensor).squeeze(0).numpy()
                     elif self.rotation_mode == "quat" or raw_pred.shape[0] == 4:
                         # Assume raw_pred contains a quaternion [x, y, z, w].
-                        rot_mat = Rotation.from_quat(raw_pred).as_matrix()
+                        quat_tensor = torch.tensor(raw_pred, dtype=torch.float32).unsqueeze(0)
+                        eps = 1e-8
+                        quat_tensor = quat_tensor / (quat_tensor.norm(dim=1, keepdim=True) + eps)
+                        rot_mat = quat_to_rotmat(quat_tensor).squeeze(0).numpy()
                     elif self.rotation_mode == "6d" or raw_pred.shape[0] == 6:
-                        # Convert 6D representation to a rotation matrix.
-                        rot_mat = compute_rotation_matrix_from_6d(raw_pred)
+                        # Assume raw_pred contains a 6D representation.
+                        rep6d_tensor = torch.tensor(raw_pred, dtype=torch.float32).unsqueeze(0)
+                        rot_mat = rotmat_from_6d(rep6d_tensor).squeeze(0).numpy()
                     else:
                         raise ValueError("Unsupported rotation mode or output dimension.")
                     
