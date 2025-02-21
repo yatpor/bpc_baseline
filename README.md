@@ -88,7 +88,7 @@ python3 train_pose.py \
 ```
 ### Download Pretrained Models
 ```bash
-wget https://storage.googleapis.com/akasha-public/IPBC/baseline_solution/v1/models.zip
+wget https://storage.googleapis.com/akasha-public/IBPC/baseline_solution/v1/models.zip
 unzip models.zip
 rm models.zip
 ```
