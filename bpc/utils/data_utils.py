@@ -96,7 +96,7 @@ class BOPSingleObjDataset(Dataset):
                  augment=False,
                  split="train",
                  max_per_scene=None,
-                 train_ratio=0.8,
+                 train_ratio=0.8, 
                  seed=42):
         super().__init__()
         self.root_dir = root_dir
@@ -142,10 +142,27 @@ class BOPSingleObjDataset(Dataset):
                     for inf, pos in zip(info_json[im_id_s], pose_json[im_id_s]):
                         if pos["obj_id"] != self.obj_id:
                             continue
+                    
+                        # Use bbox_visib for the visible part of the object.
                         x, y, w_, h_ = inf["bbox_visib"]
                         if w_ <= 0 or h_ <= 0:
                             continue
-                            
+                    
+                        # Retrieve additional BOP challenge metrics if available.
+                        visib_fract = inf.get("visib_fract", 1.0)  # defaults to 1.0 if not provided
+                        px_count_all = inf.get("px_count_all", w_ * h_)  # fallback to bbox area
+                        px_count_valid = inf.get("px_count_valid", px_count_all)  # fallback if not available
+                    
+                        # Apply filtering thresholds to ensure high-quality samples:
+                        # - At least 70% of the object must be visible.
+                        # - The total object pixel count should exceed 10,000.
+                        # - The number of valid pixels must meet the minimum threshold.
+                        # Adjust these values based on model requirements.
+
+                        if visib_fract < 0.7 or px_count_valid < 10000:
+                            continue
+                    
+                        # If the sample passes these filters, add it to your dataset.
                         R_mat = np.array(pos["cam_R_m2c"], dtype=np.float32).reshape(3, 3)
                         t = np.array(pos["cam_t_m2c"], dtype=np.float32).reshape(3, 1)
                         all_samples.append({
@@ -156,7 +173,10 @@ class BOPSingleObjDataset(Dataset):
                             "K": K,
                             "R": R_mat,
                             "t": t,
-                            "bbox_visib": [x, y, w_, h_]
+                            "bbox_visib": [x, y, w_, h_],
+                            "visib_fract": visib_fract,
+                            "px_count_all": px_count_all,
+                            "px_count_valid": px_count_valid
                         })
                 scene_count += 1
                 if self.max_per_scene is not None and scene_count >= self.max_per_scene:

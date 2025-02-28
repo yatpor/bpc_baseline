@@ -61,7 +61,7 @@ def load_symmetry_from_json(json_path, num_samples=36):
 
 # Optionally, load a default symmetry file.
 try:
-    symmetry_json_path = os.path.join("datasets", "models", "models_info.json")
+    symmetry_json_path = os.path.join("datasets","ipd","models", "models_info.json")
     symmetry_data = load_symmetry_from_json(symmetry_json_path, num_samples=12)
     print(f"[INFO] Loaded symmetry data from {symmetry_json_path}")
 except Exception as e:
