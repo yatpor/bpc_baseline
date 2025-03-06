@@ -67,11 +67,13 @@ def prepare_train_pbr(train_pbr_path, output_path, obj_id):
             num_imgs = len(scene_gt_data)  # or use max key from scene_gt_data
             for img_id in range(num_imgs):
                 img_key = str(img_id)
-                img_file = os.path.join(rgb_path, f"{img_id:06d}.jpg")
+                img_file_jpg = os.path.join(rgb_path, f"{img_id:06d}.jpg")
+                img_file_png = os.path.join(rgb_path, f"{img_id:06d}.png")
+                img_file = img_file_jpg if os.path.exists(img_file_jpg) else img_file_png if os.path.exists(img_file_png) else None
 
-                if not os.path.exists(img_file):
-                    # If the image doesn't exist, skip
+                if img_file is None:
                     continue
+
                 if img_key not in scene_gt_data or img_key not in scene_gt_info_data:
                     # If there's no ground-truth info for this frame, skip
                     continue
