@@ -28,10 +28,10 @@ DATASET_FILES=(
     "ipd_val.zip"
 #     "ipd_test_all.zip"
 #     "ipd_test_all.z01"
-    "ipd_train_pbr.zip"
-    "ipd_train_pbr.z01"
-    "ipd_train_pbr.z02"
-    "ipd_train_pbr.z03"
+#     "ipd_train_pbr.zip"
+#     "ipd_train_pbr.z01"
+#     "ipd_train_pbr.z02"
+#     "ipd_train_pbr.z03"
 )
 
 TARGET_DIR="./datasets"
@@ -72,13 +72,13 @@ echo "[INFO] Extracting dataset as per original instructions..."
 7z x ipd_base.zip             # Contains folder "ipd".
 7z x ipd_models.zip -oipd     # Unpacks to "ipd".
 7z x ipd_val.zip -oipd        # Unpacks to "ipd".
-7z x ipd_test_all.zip -oipd   # Unpacks to "ipd".
-7z x ipd_train_pbr.zip -oipd  # Unpacks to "ipd".
+# 7z x ipd_test_all.zip -oipd   # Unpacks to "ipd".
+# 7z x ipd_train_pbr.zip -oipd  # Unpacks to "ipd".
 
 ### 5️⃣ Cleanup (Remove Zip Files After Successful Extraction) ###
 rm -f ipd_base.zip ipd_models.zip ipd_val.zip
-rm -f ipd_test_all.zip ipd_test_all.z01
-rm -f ipd_train_pbr.zip ipd_train_pbr.z01 ipd_train_pbr.z02 ipd_train_pbr.z03
+# rm -f ipd_test_all.zip ipd_test_all.z01
+# rm -f ipd_train_pbr.zip ipd_train_pbr.z01 ipd_train_pbr.z02 ipd_train_pbr.z03
 
 echo "[INFO] Dataset fully downloaded, extracted, and cleaned up."
 # #!/bin/bash
