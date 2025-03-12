@@ -4,6 +4,9 @@
 DATASET_URLS=(
     "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_models.zip"
     "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_val.zip"
+    "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_train_pbr.z01"
+    "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_train_pbr.z02"
+    "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_train_pbr.z03"
     "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main/ipd_train_pbr.zip"
 )
 # docker run --network=host -e BOP_PATH=/datasets/ -e DATASET_NAME=ipd -v /home/akasha_uswest2/bin_picking_challenge/ipd_codebase/datasets/:/datasets/ -it ibpc:tester
