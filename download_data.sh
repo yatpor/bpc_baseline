@@ -28,10 +28,10 @@ DATASET_FILES=(
     "ipd_val.zip"
 #     "ipd_test_all.zip"
 #     "ipd_test_all.z01"
-    "ipd_train_pbr.zip"
-    "ipd_train_pbr.z01"
-    "ipd_train_pbr.z02"
-    "ipd_train_pbr.z03"
+    # "ipd_train_pbr.zip"
+    # "ipd_train_pbr.z01"
+    # "ipd_train_pbr.z02"
+    # "ipd_train_pbr.z03"
 )
 
 TARGET_DIR="./datasets"
