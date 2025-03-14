@@ -75,7 +75,6 @@ python3 bpc/yolo/train.py \
     --batch 16 \
     --task detection
 ```
-*Updated `--imgsz` from 640 to 1280.*
 
 ### Train Pose Model
 ```bash
