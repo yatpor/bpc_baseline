@@ -8,67 +8,6 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R  # For metric evaluation
 
 #############################################
-# Functions to Load Symmetry Data from JSON
-#############################################
-
-def generate_continuous_symmetries(axis, num_samples=12):
-    """
-    Generate discrete rotation matrices by sampling a continuous symmetry axis.
-    
-    Args:
-        axis (list): A 3D unit vector representing the axis of rotation.
-        num_samples (int): Number of discrete rotations to generate.
-        
-    Returns:
-        sym_list (list of torch.Tensor): List of (3,3) rotation matrices.
-    """
-    axis = np.array(axis) / np.linalg.norm(axis)
-    angles = np.linspace(0, 2 * math.pi, num_samples, endpoint=False)
-    sym_list = []
-    for angle in angles:
-        rot = R.from_rotvec(angle * axis)
-        sym_matrix = torch.tensor(rot.as_matrix(), dtype=torch.float32)
-        sym_list.append(sym_matrix)
-    return sym_list
-
-def load_symmetry_from_json(json_path, num_samples=36):
-    """
-    Load both discrete and continuous symmetry transformations from a JSON file.
-    
-    Args:
-        json_path (str): Path to the JSON file.
-        num_samples (int): Number of discrete samples for continuous symmetries.
-        
-    Returns:
-        sym_dict (dict): Mapping from object ID (int) to list of (3,3) torch.Tensor rotations.
-    """
-    with open(json_path, "r") as f:
-        json_data = json.load(f)
-
-    sym_dict = {}
-    for obj_id, obj_data in json_data.items():
-        sym_list = []
-        # Load discrete symmetries.
-        for sym in obj_data.get("symmetries_discrete", []):
-            sym_matrix = torch.tensor(sym).view(4, 4)[:3, :3]
-            sym_list.append(sym_matrix)
-        # Load continuous symmetries (if any).
-        for sym in obj_data.get("symmetries_continuous", []):
-            axis = sym["axis"]
-            sym_list.extend(generate_continuous_symmetries(axis, num_samples))
-        sym_dict[int(obj_id)] = sym_list
-    return sym_dict
-
-# Optionally, load a default symmetry file.
-try:
-    symmetry_json_path = os.path.join("datasets","ipd","models", "models_info.json")
-    symmetry_data = load_symmetry_from_json(symmetry_json_path, num_samples=12)
-    print(f"[INFO] Loaded symmetry data from {symmetry_json_path}")
-except Exception as e:
-    print(f"[INFO] Could not load symmetry data from {symmetry_json_path}: {e}")
-    symmetry_data = {}
-
-#############################################
 # Differentiable Helper Functions (PyTorch)
 #############################################
 
@@ -195,7 +134,7 @@ class EulerAnglePoseLoss(nn.Module):
         super(EulerAnglePoseLoss, self).__init__()
         self.w_rot = w_rot
 
-    def forward(self, labels, preds, sym_list=None):
+    def forward(self, labels, preds):
         # Use GT rotation matrix if available.
         if "R" in labels:
             R_gt = labels["R"]
@@ -223,7 +162,7 @@ class QuaternionPoseLoss(nn.Module):
         super(QuaternionPoseLoss, self).__init__()
         self.w_rot = w_rot
 
-    def forward(self, labels, preds, sym_list=None):
+    def forward(self, labels, preds):
         if "R" in labels:
             R_gt = labels["R"]
         else:
@@ -233,6 +172,7 @@ class QuaternionPoseLoss(nn.Module):
         pred_quat = preds[:, :4]
         eps = 1e-8
         pred_quat = pred_quat / (pred_quat.norm(dim=1, keepdim=True) + eps)
+        # Ensure consistency in sign.
         dot = (pred_quat * pred_quat).sum(dim=1, keepdim=True)
         pred_quat = torch.where(dot < 0, -pred_quat, pred_quat)
         R_pred = quat_to_rotmat(pred_quat)
@@ -255,7 +195,7 @@ class SixDPoseLoss(nn.Module):
         super(SixDPoseLoss, self).__init__()
         self.w_rot = w_rot
 
-    def forward(self, labels, preds, sym_list=None):
+    def forward(self, labels, preds):
         if "R" in labels:
             R_gt = labels["R"]
         else:
@@ -272,61 +212,3 @@ class SixDPoseLoss(nn.Module):
             "rot_deg_mean": rot_deg_mean,
         }
         return loss_val, metrics
-
-class SymmetryAwarePoseLoss(nn.Module):
-    """
-    Symmetry-aware pose loss supporting Euler, Quaternion, and 6D representations.
-    When GT rotation matrix is available, it is used directly.
-    """
-    def __init__(self, loss_type="euler", w_rot=1.0):
-        super(SymmetryAwarePoseLoss, self).__init__()
-        self.loss_type = loss_type
-        self.w_rot = w_rot
-
-    def forward(self, labels, preds, obj_id, sym_flag=True):
-        sym_list = symmetry_data.get(obj_id, []) if sym_flag else []
-        
-        if "R" in labels:
-            R_gt = labels["R"]
-        else:
-            if self.loss_type == "euler":
-                gt_euler = labels["euler"]
-                R_gt = rotmat_from_euler(gt_euler)
-            elif self.loss_type == "quat":
-                gt_quat = euler_to_quat_torch(labels["euler"])
-                R_gt = quat_to_rotmat(gt_quat)
-            elif self.loss_type == "6d":
-                gt_euler = labels["euler"]
-                R_gt = rotmat_from_euler(gt_euler)
-            else:
-                raise ValueError("Invalid loss_type")
-        
-        if self.loss_type == "euler":
-            R_pred = rotmat_from_euler(preds[:, :3])
-        elif self.loss_type == "quat":
-            pred_quat = preds[:, :4]
-            eps = 1e-8
-            pred_quat = pred_quat / (pred_quat.norm(dim=1, keepdim=True) + eps)
-            R_pred = quat_to_rotmat(pred_quat)
-        elif self.loss_type == "6d":
-            rep6d = preds[:, :6]
-            R_pred = rotmat_from_6d(rep6d)
-        else:
-            raise ValueError("Invalid loss_type")
-
-        if sym_list:
-            loss_list = []
-            for S in sym_list:
-                R_gt_sym = torch.matmul(S.to(R_gt.device), R_gt)
-                loss_sym = geodesic_distance_from_matrix(R_pred, R_gt_sym)
-                loss_list.append(loss_sym)
-            loss_stack = torch.stack(loss_list, dim=0)
-            min_loss, _ = torch.min(loss_stack, dim=0)
-            loss_val = min_loss.mean()
-            rot_deg_mean = (min_loss * 180.0 / math.pi).mean()
-        else:
-            loss_tensor = geodesic_distance_from_matrix(R_pred, R_gt)
-            loss_val = loss_tensor.mean()
-            rot_deg_mean = compute_rot_deg_mean_matrix(R_gt, R_pred)
-            
-        return self.w_rot * loss_val, {"rot_loss": loss_val, "rot_deg_mean": rot_deg_mean}

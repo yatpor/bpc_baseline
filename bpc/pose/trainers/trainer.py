@@ -52,13 +52,12 @@ def train_pose_estimation(
 
         tbar = tqdm(train_loader, desc=f"Train Epoch {epoch}/{epochs}", ncols=120)
         for imgs, lbls, metas in tbar:
-            sym_list = None
             imgs = imgs.to(device)
             batched_labels = batch_labels(lbls, device)
 
             optimizer.zero_grad()
             preds = model(imgs)
-            loss, metrics = criterion(batched_labels, preds, sym_list=sym_list)
+            loss, metrics = criterion(batched_labels, preds)
             loss.backward()
             optimizer.step()
 
@@ -87,10 +86,9 @@ def train_pose_estimation(
 
         with torch.no_grad():
             for imgs, lbls, metas in val_loader:
-                sym_list = None
                 imgs = imgs.to(device)
                 batched_labels = batch_labels(lbls, device)
-                loss, metrics = criterion(batched_labels, model(imgs), sym_list=sym_list)
+                loss, metrics = criterion(batched_labels, model(imgs))
                 val_steps += 1
                 val_loss_sum += metrics["rot_loss"].item()
                 val_deg_sum  += metrics["rot_deg_mean"].item()

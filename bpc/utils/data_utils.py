@@ -96,8 +96,10 @@ class BOPSingleObjDataset(Dataset):
                  augment=False,
                  split="train",
                  max_per_scene=None,
-                 train_ratio=0.8, 
-                 seed=42):
+                 train_ratio=0.8,  # Default split ratio: 80% train, 20% val.
+                 seed=42,
+                 use_real_val=False  # New flag: if True, try to use the real validation dataset.
+                 ):
         super().__init__()
         self.root_dir = root_dir
         self.scene_ids = scene_ids
@@ -111,13 +113,31 @@ class BOPSingleObjDataset(Dataset):
         self.samples = []
         random.seed(seed)
 
+        # Choose dataset path based on split and flag.
+        if self.split == "val" and use_real_val:
+            real_val_path = os.path.join(root_dir, "val")
+            if os.path.exists(real_val_path):
+                dataset_path = real_val_path
+            else:
+                print(f"[WARNING] Real validation directory {real_val_path} not found. Falling back to train_pbr.")
+                train_pbr_path = os.path.join(root_dir, "train_pbr")
+                if os.path.exists(train_pbr_path):
+                    dataset_path = train_pbr_path
+                else:
+                    raise FileNotFoundError(f"Directory '{train_pbr_path}' not found in {root_dir}")
+        else:
+            train_pbr_path = os.path.join(root_dir, "train_pbr")
+            if os.path.exists(train_pbr_path):
+                dataset_path = train_pbr_path
+            else:
+                raise FileNotFoundError(f"Directory '{train_pbr_path}' not found in {root_dir}")
+
         # Gather all samples.
         all_samples = []
-        train_pbr_path = os.path.join(root_dir, "train_pbr")
         for sid in scene_ids:
-            scene_path = os.path.join(train_pbr_path, sid)
+            scene_path = os.path.join(dataset_path, sid)
             scene_count = 0
-            for cam_id in cam_ids:
+            for cam_id in self.cam_ids:
                 info_file = os.path.join(scene_path, f"scene_gt_info_{cam_id}.json")
                 pose_file = os.path.join(scene_path, f"scene_gt_{cam_id}.json")
                 cam_file  = os.path.join(scene_path, f"scene_camera_{cam_id}.json")
@@ -134,10 +154,18 @@ class BOPSingleObjDataset(Dataset):
                     if im_id_s not in cam_json:
                         continue
                     K = np.array(cam_json[im_id_s]["cam_K"], dtype=np.float32).reshape(3, 3)
-                    img_name = f"{im_id:06d}.jpg"
-                    img_path = os.path.join(rgb_dir, img_name)
-                    if not os.path.exists(img_path):
-                        continue
+                    
+                    img_name_jpg = os.path.join(rgb_dir, f"{im_id:06d}.jpg")
+                    img_name_png = os.path.join(rgb_dir, f"{im_id:06d}.png")
+                    
+                    # Check if JPG exists, otherwise use PNG.
+                    if os.path.exists(img_name_jpg):
+                        img_path = img_name_jpg
+                    elif os.path.exists(img_name_png):
+                        img_path = img_name_png
+                    else:
+                        continue  # Skip if neither format is found.
+                    
                     # Loop through all object instances in the image.
                     for inf, pos in zip(info_json[im_id_s], pose_json[im_id_s]):
                         if pos["obj_id"] != self.obj_id:
@@ -149,20 +177,14 @@ class BOPSingleObjDataset(Dataset):
                             continue
                     
                         # Retrieve additional BOP challenge metrics if available.
-                        visib_fract = inf.get("visib_fract", 1.0)  # defaults to 1.0 if not provided
-                        px_count_all = inf.get("px_count_all", w_ * h_)  # fallback to bbox area
-                        px_count_valid = inf.get("px_count_valid", px_count_all)  # fallback if not available
+                        visib_fract = inf.get("visib_fract", 1.0)
+                        px_count_all = inf.get("px_count_all", w_ * h_)
+                        px_count_valid = inf.get("px_count_valid", px_count_all)
                     
-                        # Apply filtering thresholds to ensure high-quality samples:
-                        # - At least 70% of the object must be visible.
-                        # - The total object pixel count should exceed 10,000.
-                        # - The number of valid pixels must meet the minimum threshold.
-                        # Adjust these values based on model requirements.
-
-                        if visib_fract < 0.7 or px_count_valid < 10000:
+                        # Apply filtering thresholds.
+                        if visib_fract < 0.1 or px_count_valid < 1000:
                             continue
                     
-                        # If the sample passes these filters, add it to your dataset.
                         R_mat = np.array(pos["cam_R_m2c"], dtype=np.float32).reshape(3, 3)
                         t = np.array(pos["cam_t_m2c"], dtype=np.float32).reshape(3, 1)
                         all_samples.append({
@@ -183,19 +205,27 @@ class BOPSingleObjDataset(Dataset):
                     break
 
         # ---- SPLITTING LOGIC ----
+        # When using real validation data, assume the samples are pre-defined.
+        # Otherwise, split the synthetic data using train_ratio.
         from collections import defaultdict
         groups = defaultdict(list)
         for s in all_samples:
             key = (s["scene_id"], s["cam_id"])
             groups[key].append(s)
-        for key, group_samples in groups.items():
+        final_samples = []
+        for group_samples in groups.values():
             random.shuffle(group_samples)
             n_total = len(group_samples)
             n_train = int(round(self.train_ratio * n_total))
-            selected = group_samples[:n_train] if self.split == "train" else group_samples[n_train:]
-            self.samples.extend(selected)
-        # ------------------------------
+            if self.split == "train":
+                selected = group_samples[:n_train]
+            else:  # self.split == "val"
+                selected = group_samples[n_train:]
+            final_samples.extend(selected)
+        self.samples = final_samples
+
         print(f"[INFO] BOPSingleObjDataset(split={self.split}, augment={self.augment}): total={len(self.samples)} samples.")
+
 
     def __len__(self):
         return len(self.samples)

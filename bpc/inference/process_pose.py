@@ -14,7 +14,6 @@ from bpc.pose.models.losses import (
     EulerAnglePoseLoss,
     QuaternionPoseLoss,
     SixDPoseLoss,
-    SymmetryAwarePoseLoss,
     rotmat_from_euler,
     quat_to_rotmat,
     rotmat_from_6d,

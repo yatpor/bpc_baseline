@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the dataset path and training parameters
-ROOT_DIR="datasets/"
+ROOT_DIR="datasets/ipd"
 EPOCHS=105  # Target number of epochs
 BATCH_SIZE=32
 LR=1e-4
