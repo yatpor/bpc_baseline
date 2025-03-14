@@ -51,6 +51,7 @@ cd /code
 ```bash
 bash download_data.sh
 ```
+**Note:** If you plan to download the dataset and train your model, remember that for submission you should delete the downloaded datasets in the `datasets` folder. This prevents the Docker image from growing too large.
 
 ## Training Pipeline
 
@@ -70,10 +71,11 @@ python3 bpc/yolo/train.py \
     --obj_id 8 \
     --data_path "bpc/yolo/configs/data_obj_8.yaml" \
     --epochs 20 \
-    --imgsz 640 \
+    --imgsz 1280 \
     --batch 16 \
     --task detection
 ```
+*Updated `--imgsz` from 640 to 1280.*
 
 ### Train Pose Model
 ```bash
@@ -87,7 +89,9 @@ python3 train_pose.py \
   --checkpoints_dir bpc/pose/pose_checkpoints/ \
   --loss_type quat
 ```
-**Hint:** The `loss_type` parameter can be `quat`, `6d`, or `euler` depending on your preference.
+**Hints:**
+- Use `--use_real_val` to utilize the `val` folder in `datasets/ipd/` as the validation set. Without this flag, the script will split the `train_pbr` data in an 80:20 ratio.
+- Use `--resume` to continue training from the last checkpoint if available.
 
 ### Download Pretrained Models
 ```bash
@@ -115,4 +119,3 @@ jupyter notebook --ip=0.0.0.0 --allow-root --port=8888
 
 ## Detailed Documentation
 For detailed documentation, please refer to [this page](blog/documentation.md).
-
