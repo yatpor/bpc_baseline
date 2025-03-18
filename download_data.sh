@@ -21,17 +21,17 @@ install_aria2
 install_7z
 
 ### 2️⃣ Define Dataset Info ###
-export SRC="https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main"
+export SRC="https://Datasets" #  "https://huggingface.co/datasets/bop-benchmark/ipd/resolve/main"
 DATASET_FILES=(
     "ipd_base.zip"
     "ipd_models.zip"
     "ipd_val.zip"
-#     "ipd_test_all.zip"
-#     "ipd_test_all.z01"
-#     "ipd_train_pbr.zip"
-#     "ipd_train_pbr.z01"
-#     "ipd_train_pbr.z02"
-#     "ipd_train_pbr.z03"
+    "ipd_test_all.zip"
+    "ipd_test_all.z01"
+    "ipd_train_pbr.zip"
+    "ipd_train_pbr.z01"
+    "ipd_train_pbr.z02"
+    "ipd_train_pbr.z03"
 )
 
 TARGET_DIR="./datasets"
