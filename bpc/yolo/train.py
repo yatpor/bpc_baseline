@@ -56,7 +56,7 @@ def train_yolo11(task, data_path, obj_id, epochs, imgsz, batch):
         imgsz=imgsz,
         batch=batch,
         device=device,
-        workers=2,
+        workers=8,  # more workers, train faster, adjust based on device
         save=True,  # This creates a 'runs/train/...' folder but we'll still save final .pt ourselves
     )
 
@@ -64,7 +64,7 @@ def train_yolo11(task, data_path, obj_id, epochs, imgsz, batch):
     # Force the final save to your desired path:
     #   idp_codebase/yolo/models/<detection or segmentation>/obj_<obj_id>/yolo11-<task_suffix>-obj_<obj_id>.pt
     # ----------------------------------------------------------------------------
-    save_dir = os.path.join("yolo", "models", task_suffix, f"obj_{obj_id}")
+    save_dir = os.path.join("bpc","yolo", "models", task_suffix, f"obj_{obj_id}")
     os.makedirs(save_dir, exist_ok=True)
 
     model_name = f"yolo11-{task_suffix}-obj_{obj_id}.pt"

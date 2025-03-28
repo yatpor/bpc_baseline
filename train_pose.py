@@ -1,28 +1,24 @@
 import argparse
 import torch
-from torch.utils.data import DataLoader, ConcatDataset
-import os
-import sys
-
-# # The directory containing 'pose' is one level up:
-# FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-# PARENT_DIR = os.path.dirname(FILE_DIR)
-
-# # Add this parent directory to the path
-# sys.path.append(PARENT_DIR)
-
-# Now 'utils' is visible as a direct import
+from torch.utils.data import DataLoader
 from bpc.utils.data_utils import BOPSingleObjDataset, bop_collate_fn
 from bpc.pose.models.simple_pose_net import SimplePoseNet
-from bpc.pose.models.losses import EulerAnglePoseLoss
+from bpc.pose.models.losses import (
+    EulerAnglePoseLoss,
+    QuaternionPoseLoss,
+    SixDPoseLoss,
+)
 from bpc.pose.trainers.trainer import train_pose_estimation
 import torch.optim as optim
-
+from torch.optim.lr_scheduler import StepLR
+import os
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train Pose Estimation Model")
     parser.add_argument("--root_dir", type=str, required=True,
-                        help="Path to dataset root directory (with train_pbr)")
+                        help="Path to dataset root directory (with train_pbr and optionally val)")
+    parser.add_argument("--use_real_val", action="store_true",
+                        help="If set, use real validation dataset from root_dir/val if available. Otherwise, split train_pbr using train_ratio.")
     parser.add_argument("--target_obj_id", type=int, default=11,
                         help="Target object ID")
     parser.add_argument("--batch_size", type=int, default=32,
@@ -37,74 +33,81 @@ def parse_args():
                         help="Base directory for checkpoints")
     parser.add_argument("--resume", action="store_true",
                         help="Resume training from the last checkpoint")
+    parser.add_argument("--loss_type", type=str, default="euler", choices=["euler", "quat", "6d"],
+                        help="Rotation loss type to use (and set model output dimension accordingly)")
     return parser.parse_args()
 
-
-def find_scenes(root_dir):
+def find_scenes(directory):
     """
-    Return a sorted list of all numeric scene folder names
-    under root_dir/train_pbr, e.g. ["000000", "000001", ...].
+    Finds scene IDs in a given directory (assuming scene subdirectories are named as digits).
     """
-    train_pbr_dir = os.path.join(root_dir, "train_pbr")
-    if not os.path.exists(train_pbr_dir):
-        raise FileNotFoundError(f"{train_pbr_dir} does not exist")
-
-    all_items = os.listdir(train_pbr_dir)
+    all_items = os.listdir(directory)
     scene_ids = [item for item in all_items if item.isdigit()]
     scene_ids.sort()
     return scene_ids
 
-
 def main():
     args = parse_args()
 
-    # Find all scene folders
-    scene_ids = find_scenes(args.root_dir)
-    print(f"[INFO] Found scene_ids={scene_ids}")
+    # Determine training scenes from the "train_pbr" folder.
+    train_root = os.path.join(args.root_dir, "train_pbr")
+    if not os.path.exists(train_root):
+        raise FileNotFoundError(f"Training directory not found: {train_root}")
+    train_scene_ids = find_scenes(train_root)
+    print(f"[INFO] Found training scene_ids={train_scene_ids}")
 
-    # Construct a simpler checkpoint path for object ID only (no single scene)
+    # Determine validation scenes.
+    if args.use_real_val:
+        real_val_dir = os.path.join(args.root_dir, "val")
+        if os.path.exists(real_val_dir):
+            val_scene_ids = find_scenes(real_val_dir)
+            print(f"[INFO] Found validation scene_ids={val_scene_ids} from {real_val_dir}")
+            use_real_val_flag = True
+        else:
+            print("[WARN] Real validation directory not found, using train split ratio for validation.")
+            val_scene_ids = train_scene_ids
+            use_real_val_flag = False
+    else:
+        val_scene_ids = train_scene_ids
+        use_real_val_flag = False
+
+    # If using real validation, use the full train_pbr for training.
+    train_ratio = 1.0 if use_real_val_flag else 0.8
+
     obj_id = args.target_obj_id
     checkpoint_dir = os.path.join(args.checkpoints_dir, f"obj_{obj_id}")
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    # Prepare dataset: train (no augment), train (augment), val
-    train_ds_fixed = BOPSingleObjDataset(
+    # Create the training dataset with the chosen train_ratio.
+    train_ds = BOPSingleObjDataset(
         root_dir=args.root_dir,
-        scene_ids=scene_ids,
+        scene_ids=train_scene_ids,
         cam_ids=["cam1", "cam2", "cam3"],
-        target_obj_id=args.target_obj_id,
+        target_obj_id=obj_id,
         target_size=256,
-        augment=False,
-        split="train"
+        augment=False,  # Test
+        split="train",
+        train_ratio=train_ratio,  # Modified here.
+        use_real_val=use_real_val_flag  # Pass the flag if needed.
     )
-    train_ds_aug = BOPSingleObjDataset(
-        root_dir=args.root_dir,
-        scene_ids=scene_ids,
-        cam_ids=["cam1", "cam2", "cam3"],
-        target_obj_id=args.target_obj_id,
-        target_size=256,
-        augment=True,
-        split="train"
-    )
+
+    # Create the validation dataset.
     val_ds = BOPSingleObjDataset(
         root_dir=args.root_dir,
-        scene_ids=scene_ids,
+        scene_ids=val_scene_ids,
         cam_ids=["cam1", "cam2", "cam3"],
-        target_obj_id=args.target_obj_id,
+        target_obj_id=obj_id,
         target_size=256,
         augment=False,
-        split="val"
+        split="val",
+        use_real_val=use_real_val_flag
     )
 
-    # Print a quick summary so you see the train vs val sizes
-    print(f"[INFO] train_ds_fixed:  {len(train_ds_fixed)} samples")
-    print(f"[INFO] train_ds_aug:    {len(train_ds_aug)} samples")
-    print(f"[INFO] val_ds:          {len(val_ds)} samples")
+    print(f"[INFO] train_ds: {len(train_ds)} samples")
+    print(f"[INFO] val_ds: {len(val_ds)} samples")
 
-    # Concat the two train sets
-    train_dataset = ConcatDataset([train_ds_fixed, train_ds_aug])
     train_loader = DataLoader(
-        train_dataset,
+        train_ds,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.num_workers,
@@ -119,50 +122,61 @@ def main():
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SimplePoseNet(pretrained=True).to(device) # TODO FIX RESUMEING
+    model = SimplePoseNet(loss_type=args.loss_type, pretrained=not args.resume).to(device)
 
-    # Load checkpoint if resuming
-    # checkpoint_path = os.path.join(checkpoint_dir, "last_checkpoint.pth")
-    # checkpoint_path = 'best_model.pth' # TODO UNDO THIS
-    # if args.resume and os.path.exists(checkpoint_path):
-    # print(f"[INFO] Loading checkpoint from {checkpoint_path}")
-    # checkpoint = torch.load(checkpoint_path)
-    # print(checkpoint.keys())
+    checkpoint_path = os.path.join(checkpoint_dir, "last_checkpoint.pth")
+    if args.resume and os.path.exists(checkpoint_path):
+        print(f"[INFO] Loading checkpoint from {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path)
+        model.load_state_dict(checkpoint["model_state_dict"])
 
-    # model.load_state_dict(checkpoint)
+    step_size = max(1, args.epochs // 3)
 
-    # Initialize criterion and optimizer
-    criterion = EulerAnglePoseLoss(w_rot=1.0, w_center=1.0)
+    # Set the criterion based on loss_type.
+    if args.loss_type == "euler":
+        criterion = EulerAnglePoseLoss()
+    elif args.loss_type == "quat":
+        criterion = QuaternionPoseLoss()
+    elif args.loss_type == "6d":
+        criterion = SixDPoseLoss()
+    else:
+        raise ValueError("Invalid loss_type")
+
+    criterion_wrapper = criterion
+
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = StepLR(optimizer, step_size=step_size, gamma=0.8)
 
     if args.resume and os.path.exists(checkpoint_path):
         checkpoint = torch.load(checkpoint_path)
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
-    # Train the model
     train_pose_estimation(
         model=model,
         train_loader=train_loader,
-        val_loader=val_loader,
-        criterion=criterion,
+        val_loader=val_loader,  # Use the correct validation loader.
+        criterion=criterion_wrapper,
         optimizer=optimizer,
+        scheduler=scheduler,
         epochs=args.epochs,
         out_dir=checkpoint_dir,
         device=device,
         resume=args.resume
     )
 
-
 if __name__ == "__main__":
     main()
 
 """
-python pose/train.py \
-  --root_dir datasets/ipd_bop_data_jan25_1 \
-  --target_obj_id 11 \
-  --epochs 50 \
+Example usage:
+python3 train_pose.py \
+  --root_dir datasets/ \
+  --target_obj_id 14 \
+  --epochs 10 \
   --batch_size 32 \
-  --lr 1e-3 \
+  --lr 5e-4 \
   --num_workers 16 \
-  --checkpoints_dir /home/exouser/Desktop/idp_codebase/pose/checkpoints
+  --checkpoints_dir bpc/pose/pose_checkpoints/ \
+  --loss_type quat \
+  --use_real_val
 """
