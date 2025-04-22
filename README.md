@@ -272,7 +272,11 @@ docker build . -t bpc:2025.1.31
 #### **Running the Docker Container**  
 
 ```bash
-docker run -p 8888:8888 --shm-size=1g --runtime nvidia --gpus all -v $(pwd):/code -ti bpc:2025.1.31 bash
+docker run -p 8888:8888 --shm-size=1g --runtime nvidia --gpus all \
+    -v $(pwd):/code \
+    -v /home/yplau/bpc_ws/datasets/ipd:/code/datasets/ipd \
+    -v /home/yplau/bpc_ws/datasets/ipd/train_pbr:/code/datasets/train_pbr \
+    -ti bpc:2025.1.31 bash
 cd /code
 ```
 
